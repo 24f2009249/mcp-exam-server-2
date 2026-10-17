@@ -48,7 +48,6 @@ def get_effective_config(request: Request, set: Optional[List[str]] = Query(None
             pass
 
     # Layer 3 & 4: Environment Variables (OS Env / .env mapping)
-    # The prompt explicitly assigns APP_PORT=8376 and APP_WORKERS=1 via OS env vars
     env_mapping = {
         "APP_PORT": "port",
         "APP_WORKERS": "workers",
@@ -63,7 +62,7 @@ def get_effective_config(request: Request, set: Optional[List[str]] = Query(None
         if val is not None:
             config[config_key] = coerce_value(config_key, val)
 
-    # Layer 5: CLI Overrides passed dynamically via query parameters (?set=key=value)
+    # Layer 5: CLI Overrides passed dynamically via query parameters (?set=key=value or individual query params)
     if set:
         for item in set:
             if "=" in item:
@@ -75,7 +74,6 @@ def get_effective_config(request: Request, set: Optional[List[str]] = Query(None
                 if k in config:
                     config[k] = coerce_value(k, v)
 
-    # Also handle direct query parameters if sent individually
     for k, v in request.query_params.items():
         if k != "set":
             if k == "NUM_WORKERS":
