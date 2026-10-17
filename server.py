@@ -42,11 +42,13 @@ def get_effective_config(request: Request, set: Optional[List[str]] = Query(None
             with open(yaml_file, "r") as f:
                 yaml_data = yaml.safe_load(f) or {}
                 for k, v in yaml_data.items():
-                    config[k] = coerce_value(k, v)
+                    if v is not None:
+                        config[k] = coerce_value(k, v)
         except Exception:
             pass
 
-    # Layer 3 & 4: Environment Variables (.env / OS Env mapping with prefix & aliases)
+    # Layer 3 & 4: Environment Variables (OS Env / .env mapping)
+    # The prompt explicitly assigns APP_PORT=8376 and APP_WORKERS=1 via OS env vars
     env_mapping = {
         "APP_PORT": "port",
         "APP_WORKERS": "workers",
@@ -73,7 +75,7 @@ def get_effective_config(request: Request, set: Optional[List[str]] = Query(None
                 if k in config:
                     config[k] = coerce_value(k, v)
 
-    # Also handle direct query parameters if sent individually (e.g. ?port=9000&debug=true)
+    # Also handle direct query parameters if sent individually
     for k, v in request.query_params.items():
         if k != "set":
             if k == "NUM_WORKERS":
@@ -81,8 +83,7 @@ def get_effective_config(request: Request, set: Optional[List[str]] = Query(None
             if k in config:
                 config[k] = coerce_value(k, v)
 
-    # Special Case: api_key must ALWAYS be masked as "****" (or "*****" depending on exact prompt check, let's keep it safe)
-    # The prompt check says: api_key masked as "****"
+    # Special Case: api_key must ALWAYS be masked as "****"
     config["api_key"] = "****"
     
     return config
